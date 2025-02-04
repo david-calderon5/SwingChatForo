@@ -18,11 +18,9 @@ public class ConexionClienteTCP extends Thread{
              BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(cliente.getOutputStream()))) {
             boolean conectado;
             do {
-                System.out.println(1);
                 String nombreUsuario = bufferedReader.readLine();
                 System.out.println(nombreUsuario);
                 conectado = usuariosConectados.add(nombreUsuario);
-                System.out.println(2);
             } while (!conectado);
             System.out.println("Usuario conectado");
             bufferedWriter.write("Conexión correcta\n");
