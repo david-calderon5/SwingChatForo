@@ -1,5 +1,6 @@
 package org.example.TCP;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -10,6 +11,7 @@ public class ServerTCP {
 
     private static final int PUERTO = 55555;
     private static Set<String> usuariosConectados = new HashSet<>();
+    private static Set<BufferedWriter> clientesConectados = new HashSet<>();
 
     public static void main(String[] args) {
 
@@ -17,8 +19,7 @@ public class ServerTCP {
         try (ServerSocket serverSocket = new ServerSocket(PUERTO)) {
             while (true) {
                 Socket cliente = serverSocket.accept();
-                new ConexionClienteTCP(cliente, usuariosConectados).start();
-                //System.out.println("Usuario conectado");
+                new ConexionClienteTCP(cliente, usuariosConectados, clientesConectados).start();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

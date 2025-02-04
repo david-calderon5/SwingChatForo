@@ -10,6 +10,10 @@ import java.net.Socket;
 public class SwingChat {
     private static final String DIRECCION_SERVER = "127.0.0.1";
     private static final int PUERTO = 55555;
+    private static Socket socket;
+    private static BufferedReader bufferedReader;
+    private static BufferedWriter bufferedWriter;
+
     private JPanel mainPanel;
     private static final JFrame frameBase = new JFrame("SwingChat");
     private JButton buttonAcceder;
@@ -17,35 +21,61 @@ public class SwingChat {
     private JLabel labelNombre;
     private JTextField textFieldNombreUsuario;
     private JPanel segundoPanel;
-    private JTextField textFieldChat;
     private JRadioButton radioButtonTCP;
     private JRadioButton radioButtonUDP;
     private JLabel labelConexion;
-    private JTextArea textAreaTextoAEnviar;
     private JButton buttonEnviarMensaje;
+    private JTextArea textAreaChat;
+    private JTextField textFieldTextoAEnviar;
 
     public SwingChat() {
         buttonAcceder.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
+                boolean conexion = false;
                 if (radioButtonTCP.isSelected()) {
-                    intentarConexionTCP(textFieldNombreUsuario.getText());
+                    conexion = intentarConexionTCP();
                     System.out.println("Conexión TCP");
                 } else {
                     System.out.println("Conexión UDP");
                 }
-                primerPanel.setVisible(false);
-                frameBase.setContentPane(new SwingChat().segundoPanel);
-                segundoPanel.setVisible(true);
+                if (conexion) {
+                    primerPanel.setVisible(false);
+                    frameBase.setContentPane(segundoPanel);
+                    segundoPanel.setVisible(true);
+                    iniciarEscucha();
+                }
             }
         });
         buttonEnviarMensaje.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
+                String mensaje = textFieldTextoAEnviar.getText();
+                if (!mensaje.isEmpty()) {
+                    try {
+                        bufferedWriter.write(mensaje + "\n");
+                        bufferedWriter.flush();
+                        textFieldTextoAEnviar.setText("");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
             }
         });
+    }
+
+    private void iniciarEscucha() {
+        Thread escuchar = new Thread(() -> {
+            try {
+                String respuesta;
+                while ((respuesta = bufferedReader.readLine()) != null) {
+                    textAreaChat.append(respuesta + "\n");
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        escuchar.start();
     }
 
     public static void main(String[] args) {
@@ -61,24 +91,27 @@ public class SwingChat {
         frameBase.setContentPane(new SwingChat().primerPanel);
     }
 
-    private void intentarConexionTCP(String texto) {
-        try (Socket socket = new Socket(DIRECCION_SERVER, PUERTO);
-             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
-            boolean salida = false;
-            while (!salida) {
-                bufferedWriter.write(texto + "\n");
-                bufferedWriter.flush();
-                String respuesta = bufferedReader.readLine();
+    private boolean intentarConexionTCP() {
+        try {
+            socket = new Socket(DIRECCION_SERVER, PUERTO);
+            bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+
+            bufferedWriter.write(textFieldNombreUsuario.getText() + "\n");
+            bufferedWriter.flush();
+
+            String respuesta = bufferedReader.readLine();
+            if (!respuesta.isEmpty()) {
                 if (respuesta.equals("Nombre no disponible")) {
-                    System.err.println("Nombre no disponible");
+                    System.err.println(respuesta);
+                    socket.close();
                 } else if (respuesta.equals("Conexión correcta")) {
-                    System.out.println("Conexión correcta");
-                    salida = true;
-                } else {
-                    System.out.println("Nombre seleccionado");
+                    System.out.println(respuesta);
+                    return true;
                 }
+                return false;
             }
+            return false;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -128,13 +161,13 @@ public class SwingChat {
         segundoPanel = new JPanel();
         segundoPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
         mainPanel.add(segundoPanel, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        textFieldChat = new JTextField();
-        segundoPanel.add(textFieldChat, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(610, 320), null, 0, false));
-        textAreaTextoAEnviar = new JTextArea();
-        segundoPanel.add(textAreaTextoAEnviar, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
         buttonEnviarMensaje = new JButton();
         buttonEnviarMensaje.setText("Enviar");
         segundoPanel.add(buttonEnviarMensaje, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        textFieldTextoAEnviar = new JTextField();
+        segundoPanel.add(textFieldTextoAEnviar, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        textAreaChat = new JTextArea();
+        segundoPanel.add(textAreaChat, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
         ButtonGroup buttonGroup;
         buttonGroup = new ButtonGroup();
         buttonGroup.add(radioButtonUDP);
@@ -147,4 +180,5 @@ public class SwingChat {
     public JComponent $$$getRootComponent$$$() {
         return mainPanel;
     }
+
 }
