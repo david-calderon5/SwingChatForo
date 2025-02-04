@@ -4,12 +4,13 @@ import java.io.*;
 import java.net.Socket;
 import java.util.Set;
 
-public class ConexionClienteTCP extends Thread{
+public class ConexionClienteTCP extends Thread {
     private Socket cliente;
     private String nombrePropio;
     private Set<String> usuariosConectados;
     private BufferedWriter bufferedWriterUnico;
     private Set<BufferedWriter> clientesConectados;
+
     public ConexionClienteTCP(Socket cliente, Set<String> usuariosConectados, Set<BufferedWriter> clientesConectados) {
         this.cliente = cliente;
         this.clientesConectados = clientesConectados;
