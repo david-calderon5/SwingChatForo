@@ -21,7 +21,7 @@ public class ClienteUDP {
     public ClienteUDP() {
         configurarSwing();
         intentarConexionUDP();
-        new Thread(this::iniciarEscucha).start();
+        iniciarEscucha();
     }
 
     public static void main(String[] args) {
