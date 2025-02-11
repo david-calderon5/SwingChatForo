@@ -78,7 +78,6 @@ public class ClienteUDP {
                         salir = true;
                     }
                 }
-
             }
         } catch (SocketException e) {
             throw new RuntimeException(e);
