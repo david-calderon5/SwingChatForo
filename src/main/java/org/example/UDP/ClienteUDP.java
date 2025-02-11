@@ -19,7 +19,7 @@ public class ClienteUDP {
     private JButton jButtonEnviar;
 
     public ClienteUDP() {
-        setupGUI();
+        configurarSwing();
         intentarConexionUDP();
         new Thread(this::iniciarEscucha).start();
     }
@@ -28,7 +28,7 @@ public class ClienteUDP {
         SwingUtilities.invokeLater(ClienteUDP::new);
     }
 
-    private void setupGUI() {
+    private void configurarSwing() {
         JFrame jFramePrincipal = new JFrame("Chat UDP");
         jFramePrincipal.setSize(720, 480);
         jFramePrincipal.setLocationRelativeTo(null);
